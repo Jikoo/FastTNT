@@ -1,0 +1,12 @@
+name: FastTNT
+main: com.github.jikoo.fasttnt.FastTNT
+version: 1.4
+author: Jikoo
+softdepend: [Vault]
+
+commands:
+ fasttnt:
+  default: false
+  description: Craft TNT in a jiffy!
+  permission: fasttnt.use
+  aliases: [ftnt, tnt, ctnt]

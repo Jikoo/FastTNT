@@ -1,0 +1,8 @@
+# sand-type: -1 for any, 0 for normal sand only, 1 for red sand only
+# craft-message is the message sent when TNT is crafted.
+#   Supports & color codes.
+#   %tnt% is replaced by the number of TNT crafted.
+# cost-per-tnt is a charge per TNT crafted. Requires Vault and a Vault-compatible economy.
+sand-type: -1
+craft-message: '&aCrafted %tnt% tnt!'
+cost-per-tnt: 0.0
