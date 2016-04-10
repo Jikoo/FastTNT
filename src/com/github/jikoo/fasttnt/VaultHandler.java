@@ -21,12 +21,21 @@ public class VaultHandler {
 	}
 
 	public boolean init() {
-		RegisteredServiceProvider<Economy> economyProvider = plugin.getServer().getServicesManager().getRegistration(Economy.class);
-		if (economyProvider == null) {
+		if (!plugin.getServer().getPluginManager().isPluginEnabled("Vault")) {
+			// Vault not present
 			return false;
 		}
-		economy = economyProvider.getProvider();
-		return true;
+		try {
+			RegisteredServiceProvider<Economy> economyProvider = plugin.getServer().getServicesManager().getRegistration(Economy.class);
+			if (economyProvider == null) {
+				return false;
+			}
+			economy = economyProvider.getProvider();
+			return true;
+		} catch (Exception e) {
+			// Just in case
+			return false;
+		}
 	}
 
 	public double getBalance(Player player) {
@@ -43,4 +52,5 @@ public class VaultHandler {
 		EconomyResponse response = economy.withdrawPlayer(player, player.getWorld().getName(), amount);
 		return response.transactionSuccess();
 	}
+
 }

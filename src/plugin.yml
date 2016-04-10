@@ -1,12 +1,21 @@
 name: FastTNT
 main: com.github.jikoo.fasttnt.FastTNT
-version: 1.4
+version: 1.4.1
 author: Jikoo
 softdepend: [Vault]
 
+permissions:
+ fasttnt.*:
+  default: op
+  children:
+   fasttnt.reload:
+    default: op
+    children:
+     fasttnt.use: true
+
 commands:
  fasttnt:
-  default: false
   description: Craft TNT in a jiffy!
   permission: fasttnt.use
   aliases: [ftnt, tnt, ctnt]
+  usage: /fasttnt [number] or just /fasttnt to craft as many as possible

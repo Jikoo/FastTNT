@@ -1,8 +1,18 @@
-# sand-type: -1 for any, 0 for normal sand only, 1 for red sand only
-# craft-message is the message sent when TNT is crafted.
-#   Supports & color codes.
-#   %tnt% is replaced by the number of TNT crafted.
-# cost-per-tnt is a charge per TNT crafted. Requires Vault and a Vault-compatible economy.
+# Acceptable sand types. -1 for any, 0 for normal sand only, 1 for red sand only
 sand-type: -1
-craft-message: '&aCrafted %tnt% tnt!'
+# Cost per TNT crafted. Requires Vault and a Vault-compatible economy.
 cost-per-tnt: 0.0
+
+lang:
+  # Message sent when an invalid parameter is passed. Supports color codes.
+  invalid: '&cUse /fasttnt [number] to craft an amount or no arguments for as many as possible.'
+  # Message sent when TNT is crafted. Supports color codes. %tnt% is replaced with the number of TNT.
+  success: '&aCrafted %tnt% tnt!'
+  # Message sent when no TNT can be crafted. Supports color codes. %limit% is replaced with the limiting factor.
+  failure: '&cYou do not have enough %cause% to craft any TNT.'
+  # Replaces %cause% when sand is the limiting factor. Does not support color codes.
+  sand: 'sand'
+  # Replaces %cause% when gunpowder is the limiting factor. Does not support color codes.
+  gunpowder: 'gunpowder'
+  # Replaces %cause% when money is the limiting factor. Does not support color codes.
+  money: 'money'

@@ -7,60 +7,111 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Just for fun!
  * 
  * @author Jikoo
  */
-public class FastTNT extends JavaPlugin {
+public class FastTNT extends JavaPlugin implements Listener {
 
 	private VaultHandler vaultHandler;
+	private String messageSuccess, messageFailure, messageInvalid;
+	private short sandType;
+	private double costPerTNT;
 
 	@Override
 	public void onEnable() {
-		if (getConfig().getInt("sand-type") > 1 || getConfig().getInt("sand-type") < -1) {
-			getConfig().set("sand-type", -1);
-		}
-		if (getConfig().getDouble("cost-per-tnt", 0) > 0) {
-			if (getServer().getPluginManager().isPluginEnabled("Vault")) {
-				vaultHandler = new VaultHandler(this);
-				if (!vaultHandler.init()) {
-					vaultHandler = null;
-					getLogger().warning("Vault was hooked, but no valid economy is present. Crafting TNT will not cost anything.");
-				} else {
-					getLogger().info("Vault hooked! Each TNT crafted will cost " + getConfig().getDouble("cost-per-tnt", 0));
-				}
-			} else {
-				getLogger().warning("Cost per TNT crafted is set, but Vault is not present! Crafting TNT will not cost anything.");
-			}
+		sandType = (short) Math.max(Math.min(this.getConfig().getInt("sand-type", -1), 1), -1);
+		messageSuccess = this.getConfig().getString("lang.success", "&aCrafted %tnt% tnt!");
+		messageSuccess = ChatColor.translateAlternateColorCodes('&', messageSuccess);
+		messageFailure = this.getConfig().getString("lang.failure",
+				"&cYou do not have enough %cause% to craft any TNT.");
+		messageFailure = ChatColor.translateAlternateColorCodes('&', messageFailure);
+		messageInvalid = this.getConfig().getString("lang.invalid",
+				"&cUse /fasttnt [number] to craft an amount or no arguments for as many as possible.");
+		messageInvalid = ChatColor.translateAlternateColorCodes('&', messageInvalid);
+		costPerTNT = this.getConfig().getDouble("cost-per-tnt", 0);
+
+		if (costPerTNT > 0) {
+			this.getServer().getPluginManager().registerEvents(this, this);
+			updateVaultHandler();
 		}
 	}
 
 	@Override
+	public void onDisable() {
+		vaultHandler = null;
+		HandlerList.unregisterAll((Listener) this);
+	}
+
+	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if (!(sender instanceof Player)) {
-			sender.sendMessage("FastTNT does not offer console support at this time, sorry!");
+		if (args.length > 0 && args[0].equalsIgnoreCase("reload")
+				&& sender.hasPermission("fasttnt.reload")) {
+			this.reloadConfig();
+			this.onDisable();
+			this.onEnable();
+			sender.sendMessage("FastTNT reloaded!");
 			return true;
 		}
+		if (!(sender instanceof Player)) {
+			sender.sendMessage("/fasttnt reload");
+			return true;
+		}
+
+		int tnt;
+		if (args.length > 0) {
+			try {
+				tnt = Integer.valueOf(args[0]);
+			} catch (NumberFormatException exception) {
+				sender.sendMessage(messageInvalid);
+				return true;
+			}
+		} else {
+			tnt = Integer.MAX_VALUE;
+		}
+
 		Player player = (Player) sender;
 
-		// Total tnt that can be made with the materials in inventory first
-		short sandDurability = (short) getConfig().getInt("sand-type", -1);
-		int tntSand = sum(player.getInventory().all(Material.SAND), sandDurability) / 4;
+		// Maximum TNT that could be crafted with the amount of sand the player has
+		int tntSand = sum(player.getInventory().all(Material.SAND), sandType) / 4;
+		if (tntSand < 1) {
+			player.sendMessage(messageFailure.replace("%cause%", this.getConfig().getString("lang.sand", "sand")));
+			return true;
+		}
+
+		// Set total to limiting factor
+		tnt = Math.min(tnt, tntSand);
+
+		// Maximum TNT that could be crafted with the amount of gunpowder the player has
 		int tntGunpowder = sum(player.getInventory().all(Material.SULPHUR)) / 5;
+		if (tntGunpowder < 1) {
+			player.sendMessage(messageFailure.replace("%cause%", this.getConfig().getString("lang.gunpowder", "gunpowder")));
+			return true;
+		}
+
+		// Next potential limiting factor
+		tnt = Math.min(tnt, tntGunpowder);
 
 		// Total amount of quickly-crafted TNT that can be paid for with Vault balance
 		int tntMoney = -1;
-		if (getConfig().getDouble("cost-per-tnt", 0) > 0 && vaultHandler != null) {
-			tntMoney = (int) (vaultHandler.getBalance(player) / getConfig().getDouble("cost-per-tnt"));
-		}
-
-		// Set total based on limiting factor
-		int tnt = Math.min(tntSand, tntGunpowder);
-		if (tntMoney != -1) {
+		if (vaultHandler != null && costPerTNT > 0) {
+			tntMoney = (int) (vaultHandler.getBalance(player) / costPerTNT);
+			if (tntMoney < 1) {
+				player.sendMessage(messageFailure.replace("%cause%", this.getConfig().getString("lang.money", "money")));
+				return true;
+			}
+			// Last potential limiting factor
 			tnt = Math.min(tnt, tntMoney);
 		}
 
@@ -70,11 +121,11 @@ public class FastTNT extends JavaPlugin {
 
 		// Charge player if Vault is present and a cost is set
 		if (tntMoney != -1) {
-			vaultHandler.withdraw(player, tnt * getConfig().getDouble("cost-per-tnt"));
+			vaultHandler.withdraw(player, tnt * costPerTNT);
 		}
 
 		// Remove sand from Player
-		ItemStack is = new ItemStack(Material.SAND, 64, sandDurability == -1 ? 0 : sandDurability);
+		ItemStack is = new ItemStack(Material.SAND, 64, sandType == -1 ? 0 : sandType);
 		while (tntSand > 0) {
 			if (tntSand <= 64) {
 				is.setAmount(tntSand);
@@ -105,10 +156,7 @@ public class FastTNT extends JavaPlugin {
 		}
 
 		// Tell 'em like it is.
-		String message = getConfig().getString("craft-message", "&aCrafted %tnt% tnt!");
-		message = ChatColor.translateAlternateColorCodes('&', message);
-		message = message.replace("%tnt%", String.valueOf(tnt));
-		player.sendMessage(message);
+		player.sendMessage(messageSuccess.replace("%tnt%", String.valueOf(tnt)));
 
 		// Add TNT to Player
 		is.setType(Material.TNT);
@@ -147,4 +195,36 @@ public class FastTNT extends JavaPlugin {
 		}
 		return sum;
 	}
+
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPluginEnable(PluginEnableEvent event) {
+		if (costPerTNT > 0) {
+			updateVaultHandler();
+		}
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPluginDisable(PluginDisableEvent event) {
+		if (costPerTNT > 0) {
+			updateVaultHandler();
+		}
+	}
+
+	private void updateVaultHandler() {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				if (!FastTNT.this.getServer().getPluginManager().isPluginEnabled("Vault")) {
+					return;
+				}
+				if (vaultHandler == null) {
+					vaultHandler = new VaultHandler(FastTNT.this);
+				}
+				if (!vaultHandler.init()) {
+					vaultHandler = null;
+				}
+			}
+		}.runTask(this);
+	}
+
 }
