@@ -1,6 +1,6 @@
 name: FastTNT
 main: com.github.jikoo.fasttnt.FastTNT
-version: 1.4.1
+version: 1.4.2
 author: Jikoo
 softdepend: [Vault]
 
@@ -11,7 +11,8 @@ permissions:
    fasttnt.reload:
     default: op
     children:
-     fasttnt.use: true
+     fasttnt.use:
+      default: true
 
 commands:
  fasttnt:

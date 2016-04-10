@@ -141,14 +141,15 @@ public class FastTNT extends JavaPlugin implements Listener {
 			int failures = sum(player.getInventory().removeItem(is));
 			if (failures > 0) {
 				// If the player has no plain sand left, they must have red sand.
-				// This cannot be hit if sandDurability is not -1, so no need for additional logic
+				// Because our sum method discounts stacks with meta, this cannot be hit unless sandType is -1
 				is = new ItemStack(Material.SAND, failures, (short) 1);
 				player.getInventory().removeItem(is);
+				is.setAmount(64);
 			}
 		}
 
 		// Remove sulpher (gunpowder) from Player
-		is.setType(Material.SULPHUR);
+		is = new ItemStack(Material.SULPHUR, 64);
 		is.setAmount(64);
 		while (tntGunpowder > 0) {
 			if (tntGunpowder <= 64) {
@@ -194,7 +195,7 @@ public class FastTNT extends JavaPlugin implements Listener {
 	private int sum(HashMap<Integer, ? extends ItemStack> hashMap, short durability) {
 		int sum = 0;
 		for (ItemStack is : hashMap.values()) {
-			if (durability == -1 || durability == is.getDurability()) {
+			if (!is.hasItemMeta() && (durability == -1 || durability == is.getDurability())) {
 				sum += is.getAmount();
 			}
 		}
