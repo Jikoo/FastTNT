@@ -73,6 +73,11 @@ public class FastTNT extends JavaPlugin implements Listener {
 		if (args.length > 0) {
 			try {
 				tnt = Integer.valueOf(args[0]);
+				if (tnt < 1) {
+					// No need to bother with logic, same result.
+					sender.sendMessage(messageSuccess.replace("%tnt%", String.valueOf(tnt)));
+					return true;
+				}
 			} catch (NumberFormatException exception) {
 				sender.sendMessage(messageInvalid);
 				return true;
