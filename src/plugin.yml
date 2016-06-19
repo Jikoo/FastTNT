@@ -1,6 +1,6 @@
 name: FastTNT
 main: com.github.jikoo.fasttnt.FastTNT
-version: 1.4.2
+version: 1.4.3
 author: Jikoo
 softdepend: [Vault]
 

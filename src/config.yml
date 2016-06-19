@@ -16,3 +16,6 @@ lang:
   gunpowder: 'gunpowder'
   # Replaces %cause% when money is the limiting factor. Does not support color codes.
   money: 'money'
+  # Message sent when user is lacking permission. Supports color codes.
+  # Leave commented out or remove to use server default denial message.
+  #noPermission: '&cYou need the permission &4fasttnt.use &cto use this command.'

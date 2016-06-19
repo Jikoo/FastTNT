@@ -31,6 +31,9 @@ public class FastTNT extends JavaPlugin implements Listener {
 
 	@Override
 	public void onEnable() {
+
+		saveDefaultConfig();
+
 		sandType = (short) Math.max(Math.min(this.getConfig().getInt("sand-type", -1), 1), -1);
 		messageSuccess = this.getConfig().getString("lang.success", "&aCrafted %tnt% tnt!");
 		messageSuccess = ChatColor.translateAlternateColorCodes('&', messageSuccess);
@@ -41,6 +44,12 @@ public class FastTNT extends JavaPlugin implements Listener {
 				"&cUse /fasttnt [number] to craft an amount or no arguments for as many as possible.");
 		messageInvalid = ChatColor.translateAlternateColorCodes('&', messageInvalid);
 		costPerTNT = this.getConfig().getDouble("cost-per-tnt", 0);
+
+		String messagePermission = this.getConfig().getString("lang.noPermission");
+		if (messagePermission != null) {
+			messagePermission = ChatColor.translateAlternateColorCodes('&', messagePermission);
+		}
+		this.getCommand("fasttnt").setPermissionMessage(messagePermission);
 
 		if (costPerTNT > 0) {
 			this.getServer().getPluginManager().registerEvents(this, this);
